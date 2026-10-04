@@ -1,0 +1,55 @@
+name: CI Pipeline
+
+# Запуск для pull request у develop, а також після подання код-рев'ю,
+# щоб перевірка схвалення повторювалася одразу після Approve.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, review_requested]
+    branches:
+      - develop
+  pull_request_review:
+    types: [submitted]
+
+# Reviewdog потребує права писати коментарі до PR
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # Job 1: встановлення залежностей і запуск тестів
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest --junitxml=report.xml --cov=src --cov-report=xml --cov-report=term
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            report.xml
+            coverage.xml
+
+  # Job 2: код-рев'ю, метрики, статичний аналіз (лише після успішного build)
+  analysis:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
