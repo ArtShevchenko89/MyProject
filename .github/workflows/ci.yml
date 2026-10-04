@@ -88,6 +88,26 @@ jobs:
           cloc src/ tests/ > cloc-report.txt
           cat cloc-report.txt
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Запуск flake8 через Reviewdog
+        uses: reviewdog/action-flake8@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: error
+          fail_level: error
+
+      - name: Запуск Black через Reviewdog
+        uses: reviewdog/action-black@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: info
+
       - name: Download test reports
         uses: actions/download-artifact@v4
         with:
@@ -102,3 +122,19 @@ jobs:
           unzip -q sonar-scanner-cli-7.2.0.5079-linux-x64.zip
           export PATH=$PATH:$(pwd)/sonar-scanner-7.2.0.5079-linux-x64/bin
           sonar-scanner
+
+      - name: Перевірка змін у гілці develop
+        run: |
+          git checkout develop
+          git pull
+          git log --oneline --graph > develop_changes.txt
+          cat develop_changes.txt
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-reports
+          path: |
+            cloc-report.txt
+            develop_changes.txt
