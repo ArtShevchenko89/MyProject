@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.idea/
+.pytest_cache/
+.coverage
+coverage.xml
+report.xml
+.scannerwork/
+cloc-report.txt
